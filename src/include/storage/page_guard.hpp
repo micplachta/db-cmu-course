@@ -1,12 +1,12 @@
 #ifndef _PAGE_GUARD_HPP_
 #define _PAGE_GUARD_HPP_
 
-#include <storage/disk_scheduler.hpp>
 #include <buffer/arc_replacer.hpp>
+#include <storage/disk_scheduler.hpp>
 // #include <buffer/buffer_pool_manager.hpp>
 
-#include <shared_mutex>
 #include <mutex>
+#include <shared_mutex>
 
 class FrameHeader;
 class BufferPoolManager;
@@ -14,7 +14,7 @@ class BufferPoolManager;
 class ReadPageGuard {
   friend class BufferPoolManager;
 
-public:
+ public:
   ReadPageGuard() = default;
   ReadPageGuard(const ReadPageGuard&) = delete;
   ReadPageGuard& operator=(const ReadPageGuard&) = delete;
@@ -34,8 +34,10 @@ public:
   void Flush();
   void Drop();
 
-private:
-  ReadPageGuard(PageId_t, std::shared_ptr<FrameHeader>, std::shared_ptr<ArcReplacer>, std::shared_ptr<std::mutex>, std::shared_ptr<DiskScheduler>);
+ private:
+  ReadPageGuard(PageId_t, std::shared_ptr<FrameHeader>,
+                std::shared_ptr<ArcReplacer>, std::shared_ptr<std::mutex>,
+                std::shared_ptr<DiskScheduler>);
 
   PageId_t page_id_;
   std::shared_ptr<FrameHeader> frame_;
@@ -43,13 +45,13 @@ private:
   std::shared_ptr<std::mutex> bpm_mutex_;
   std::shared_ptr<DiskScheduler> disk_scheduler_;
   std::shared_lock<std::shared_mutex> read_lock_;
-  bool is_valid_{false};
+  bool is_valid_{true};
 };
 
 class WritePageGuard {
   friend class BufferPoolManager;
 
-public:
+ public:
   WritePageGuard() = default;
   WritePageGuard(const WritePageGuard&) = delete;
   WritePageGuard& operator=(const WritePageGuard&) = delete;
@@ -67,15 +69,17 @@ public:
   char* GetDataMut();
   template <class T>
   T* AsMut() {
-    return reinterpret_cast<T *>(GetDataMut());
+    return reinterpret_cast<T*>(GetDataMut());
   }
 
   bool IsDirty() const;
   void Flush();
   void Drop();
 
-private:
-  WritePageGuard(PageId_t, std::shared_ptr<FrameHeader>, std::shared_ptr<ArcReplacer>, std::shared_ptr<std::mutex>, std::shared_ptr<DiskScheduler>);
+ private:
+  WritePageGuard(PageId_t, std::shared_ptr<FrameHeader>,
+                 std::shared_ptr<ArcReplacer>, std::shared_ptr<std::mutex>,
+                 std::shared_ptr<DiskScheduler>);
 
   PageId_t page_id_;
   std::shared_ptr<FrameHeader> frame_;
@@ -83,7 +87,7 @@ private:
   std::shared_ptr<std::mutex> bpm_mutex_;
   std::shared_ptr<DiskScheduler> disk_scheduler_;
   std::unique_lock<std::shared_mutex> rw_lock_;
-  bool is_valid_{false};
+  bool is_valid_{true};
 };
 
 #endif

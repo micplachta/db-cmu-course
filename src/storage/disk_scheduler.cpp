@@ -21,7 +21,7 @@ void DiskScheduler::Schedule(std::vector<DiskRequest>& requests) {
 void DiskScheduler::StartWorkerThread() {
   while (true) {
     auto r(request_q_.Get());
-    if (!r.has_value() && !end_thread_) {
+    if (!r.has_value() && end_thread_) {
       break;
     }
 

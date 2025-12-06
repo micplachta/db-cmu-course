@@ -1,11 +1,11 @@
 #include <buffer/buffer_pool_manager.hpp>
-#include <storage/page_guard.hpp>
-#include <storage/disk_manager.hpp>
 #include <config.hpp>
+#include <storage/disk_manager.hpp>
+#include <storage/page_guard.hpp>
 
-#include <iostream>
-#include <filesystem>
 #include <cstring>
+#include <filesystem>
+#include <iostream>
 
 static std::filesystem::path file_name("test.db");
 const size_t FRAMES = 10;
@@ -22,7 +22,8 @@ int main(int argc, char** argv) {
     memcpy(guard.GetDataMut(), str.c_str(), str.length() + 1);
 
     if (strncmp(guard.GetData(), str.c_str(), str.size())) {
-      std::cerr << __LINE__  <<". expected " << guard.GetData() << " == " << str.c_str() << "\n";
+      std::cerr << __LINE__ << ". expected " << guard.GetData()
+                << " == " << str.c_str() << "\n";
       return -1;
     }
   }
@@ -30,7 +31,8 @@ int main(int argc, char** argv) {
   {
     const auto guard = bpm->ReadPage(page_id);
     if (strncmp(guard.GetData(), str.c_str(), str.size())) {
-      std::cerr << __LINE__ << ". expected " << guard.GetData() << " == " << str.c_str() << "\n";
+      std::cerr << __LINE__ << ". expected " << guard.GetData()
+                << " == " << str.c_str() << "\n";
       return -1;
     }
   }
@@ -38,7 +40,8 @@ int main(int argc, char** argv) {
   {
     const auto guard = bpm->ReadPage(page_id);
     if (strncmp(guard.GetData(), str.c_str(), str.size())) {
-      std::cerr << __LINE__ << ". expected " << guard.GetData() << " == " << str.c_str() << "\n";
+      std::cerr << __LINE__ << ". expected " << guard.GetData()
+                << " == " << str.c_str() << "\n";
       return -1;
     }
   }
@@ -47,4 +50,3 @@ int main(int argc, char** argv) {
     std::cerr << __LINE__ << ". failed to delete page\n";
   }
 }
-

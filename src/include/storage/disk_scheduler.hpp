@@ -5,8 +5,8 @@
 #include <storage/disk_manager.hpp>
 #include <utility/channel.hpp>
 
-#include <memory>
 #include <future>
+#include <memory>
 #include <optional>
 #include <thread>
 #include <vector>
@@ -21,7 +21,7 @@ struct DiskRequest {
 };
 
 class DiskScheduler {
-public:
+ public:
   DiskScheduler(DiskManager*);
   ~DiskScheduler();
 
@@ -29,7 +29,8 @@ public:
   void StartWorkerThread();
   DiskSchedulerPromise CreatePromise();
   void DeallocatePage(PageId_t);
-private:
+
+ private:
   DiskManager* disk_manager_;
   Channel<std::optional<DiskRequest>> request_q_;
   std::optional<std::thread> worker_thread_;

@@ -2,15 +2,15 @@
 #define _DISK_MANAGER_HPP_
 
 #include <config.hpp>
-#include <mutex>
 #include <filesystem>
-#include <future>
 #include <fstream>
-#include <vector>
+#include <future>
+#include <mutex>
 #include <unordered_map>
+#include <vector>
 
 class DiskManager {
-public:
+ public:
   DiskManager(const std::filesystem::path&);
   DiskManager() = default;
 
@@ -21,7 +21,7 @@ public:
   virtual void DeletePage(PageId_t);
 
   void WriteLog(char*, int);
-  void ReadLog(char*, int , int);
+  void ReadLog(char*, int, int);
   int GetNumFlushes() const;
   bool GetFlushState() const;
   int GetNumWrites() const;
@@ -33,20 +33,20 @@ public:
 
   size_t GetDbFileSize();
 
-protected:
+ protected:
   int num_flushes_{0};
   int num_writes_{0};
   int num_deletes_{0};
 
   size_t page_capacity_{DEFAULT_DB_IO_SIZE};
 
-private:
+ private:
   int GetFileSize(const std::string&);
   size_t AllocatePage();
-  
+
   std::fstream log_io_;
   std::filesystem::path log_file_name_;
-  
+
   std::fstream db_io_;
   std::filesystem::path db_file_name_;
 
@@ -54,7 +54,7 @@ private:
   std::vector<size_t> free_slots_;
 
   bool flush_log_{false};
-  std::future<void> *flush_log_f_{nullptr};
+  std::future<void>* flush_log_f_{nullptr};
   std::mutex db_io_mutex_;
 };
 

@@ -1,6 +1,7 @@
 #include <buffer/buffer_pool_manager.hpp>
 
-FrameHeader::FrameHeader(FrameId_t frame_id) : frame_id_(frame_id), data_(DB_PAGE_SIZE, 0) {
+FrameHeader::FrameHeader(FrameId_t frame_id)
+    : frame_id_(frame_id), data_(DB_PAGE_SIZE, 0) {
   Reset();
 }
 
@@ -18,8 +19,8 @@ void FrameHeader::Reset() {
   is_dirty_ = false;
 }
 
-
-BufferPoolManager::BufferPoolManager(size_t num_frames, DiskManager* disk_manager)
+BufferPoolManager::BufferPoolManager(size_t num_frames,
+                                     DiskManager* disk_manager)
     : num_frames_(num_frames),
       next_page_id_(0),
       mutex_(std::make_shared<std::mutex>()),
@@ -66,12 +67,10 @@ PageId_t BufferPoolManager::NewPage() {
     if (frame->is_dirty_) {
       // disk_scheduler_->WritePage(evicted_page, frame->GetData());
 
-      DiskRequest req{
-        .is_write = true,
-        .data = frame->GetDataMut(),
-        .page_id = page_id,
-        .cb = disk_scheduler_->CreatePromise()
-      };
+      DiskRequest req{.is_write = true,
+                      .data = frame->GetDataMut(),
+                      .page_id = page_id,
+                      .cb = disk_scheduler_->CreatePromise()};
       auto fut = req.cb.get_future();
       std::vector<DiskRequest> v;
       v.push_back(std::move(req));
@@ -91,12 +90,12 @@ PageId_t BufferPoolManager::NewPage() {
   auto frame = frames_[frame_id];
   frame->Reset();
   frame->is_dirty_ = true;
-  frame->pin_count_.store(1);
+  frame->pin_count_.store(0);
   page_table_[page_id] = frame_id;
   rev_page_table_[frame_id] = page_id;
 
   replacer_->RecordAccess(frame_id, page_id, AccessType::Unknown);
-  replacer_->SetEvictable(frame_id, false);
+  replacer_->SetEvictable(frame_id, true);
 
   return page_id;
 }
@@ -120,12 +119,10 @@ bool BufferPoolManager::DeletePage(PageId_t page_id) {
 
   if (frame->is_dirty_) {
     // disk_scheduler_->WritePage(page_id, frame->GetData());
-    DiskRequest req{
-      .is_write = true,
-      .data = frame->GetDataMut(),
-      .page_id = page_id,
-      .cb = disk_scheduler_->CreatePromise()
-    };
+    DiskRequest req{.is_write = true,
+                    .data = frame->GetDataMut(),
+                    .page_id = page_id,
+                    .cb = disk_scheduler_->CreatePromise()};
     auto fut = req.cb.get_future();
     std::vector<DiskRequest> v;
     v.push_back(std::move(req));
@@ -133,7 +130,7 @@ bool BufferPoolManager::DeletePage(PageId_t page_id) {
     fut.get();
     frame->is_dirty_ = false;
   }
-  
+
   frame->Reset();
   free_frames_.push_back(frame_id);
   disk_scheduler_->DeallocatePage(page_id);
@@ -141,7 +138,9 @@ bool BufferPoolManager::DeletePage(PageId_t page_id) {
   return true;
 }
 
-std::optional<WritePageGuard> BufferPoolManager::CheckedWritePage(PageId_t page_id, AccessType access_type) {
+std::optional<WritePageGuard> BufferPoolManager::CheckedWritePage(
+    PageId_t page_id, AccessType access_type) {
+
   std::unique_lock<std::mutex> l(*mutex_);
 
   if (page_table_.count(page_id) > 0) {
@@ -155,6 +154,7 @@ std::optional<WritePageGuard> BufferPoolManager::CheckedWritePage(PageId_t page_
     replacer_->SetEvictable(frame_id, false);
 
     WritePageGuard guard(page_id, frame, replacer_, mutex_, disk_scheduler_);
+
     return std::optional<WritePageGuard>(std::move(guard));
   }
 
@@ -174,12 +174,10 @@ std::optional<WritePageGuard> BufferPoolManager::CheckedWritePage(PageId_t page_
       auto frame = frames_[frame_id];
       if (frame->is_dirty_) {
         // disk_scheduler_->WritePage(old_page_id, frame->GetData());
-        DiskRequest req{
-          .is_write = true,
-          .data = frame->GetDataMut(),
-          .page_id = page_id,
-          .cb = disk_scheduler_->CreatePromise()
-        };
+        DiskRequest req{.is_write = true,
+                        .data = frame->GetDataMut(),
+                        .page_id = page_id,
+                        .cb = disk_scheduler_->CreatePromise()};
         auto fut = req.cb.get_future();
         std::vector<DiskRequest> v;
         v.push_back(std::move(req));
@@ -200,12 +198,10 @@ std::optional<WritePageGuard> BufferPoolManager::CheckedWritePage(PageId_t page_
 
   frame->Reset();
   // disk_scheduler_->ReadPage(page_id, frame->GetDataMut());
-  DiskRequest req{
-    .is_write = false,
-    .data = frame->GetDataMut(),
-    .page_id = page_id,
-    .cb = disk_scheduler_->CreatePromise()
-  };
+  DiskRequest req{.is_write = false,
+                  .data = frame->GetDataMut(),
+                  .page_id = page_id,
+                  .cb = disk_scheduler_->CreatePromise()};
   auto fut = req.cb.get_future();
   std::vector<DiskRequest> v;
   v.push_back(std::move(req));
@@ -222,7 +218,8 @@ std::optional<WritePageGuard> BufferPoolManager::CheckedWritePage(PageId_t page_
   return std::optional<WritePageGuard>(std::move(guard));
 }
 
-std::optional<ReadPageGuard> BufferPoolManager::CheckedReadPage(PageId_t page_id, AccessType access_type) {
+std::optional<ReadPageGuard> BufferPoolManager::CheckedReadPage(
+    PageId_t page_id, AccessType access_type) {
   std::unique_lock<std::mutex> l(*mutex_);
 
   if (page_table_.count(page_id) > 0) {
@@ -255,12 +252,10 @@ std::optional<ReadPageGuard> BufferPoolManager::CheckedReadPage(PageId_t page_id
       auto frame = frames_[frame_id];
       if (frame->is_dirty_) {
         // disk_scheduler_->WritePage(old_page_id, frame->GetData());
-        DiskRequest req{
-          .is_write = true,
-          .data = frame->GetDataMut(),
-          .page_id = page_id,
-          .cb = disk_scheduler_->CreatePromise()
-        };
+        DiskRequest req{.is_write = true,
+                        .data = frame->GetDataMut(),
+                        .page_id = page_id,
+                        .cb = disk_scheduler_->CreatePromise()};
         auto fut = req.cb.get_future();
         std::vector<DiskRequest> v;
         v.push_back(std::move(req));
@@ -281,12 +276,10 @@ std::optional<ReadPageGuard> BufferPoolManager::CheckedReadPage(PageId_t page_id
 
   frame->Reset();
   // disk_scheduler_->ReadPage(page_id, frame->GetDataMut());
-  DiskRequest req{
-    .is_write = false,
-    .data = frame->GetDataMut(),
-    .page_id = page_id,
-    .cb = disk_scheduler_->CreatePromise()
-  };
+  DiskRequest req{.is_write = false,
+                  .data = frame->GetDataMut(),
+                  .page_id = page_id,
+                  .cb = disk_scheduler_->CreatePromise()};
   auto fut = req.cb.get_future();
   std::vector<DiskRequest> v;
   v.push_back(std::move(req));
@@ -303,7 +296,8 @@ std::optional<ReadPageGuard> BufferPoolManager::CheckedReadPage(PageId_t page_id
   return std::optional<ReadPageGuard>(std::move(guard));
 }
 
-WritePageGuard BufferPoolManager::WritePage(PageId_t page_id, AccessType access_type) {
+WritePageGuard BufferPoolManager::WritePage(PageId_t page_id,
+                                            AccessType access_type) {
   auto guard_opt = CheckedWritePage(page_id, access_type);
 
   if (!guard_opt.has_value()) {
@@ -313,7 +307,8 @@ WritePageGuard BufferPoolManager::WritePage(PageId_t page_id, AccessType access_
   return std::move(guard_opt).value();
 }
 
-ReadPageGuard BufferPoolManager::ReadPage(PageId_t page_id, AccessType access_type) {
+ReadPageGuard BufferPoolManager::ReadPage(PageId_t page_id,
+                                          AccessType access_type) {
   auto guard_opt = CheckedReadPage(page_id, access_type);
 
   if (!guard_opt.has_value()) {
@@ -333,12 +328,10 @@ bool BufferPoolManager::FlushPageUnsafe(PageId_t page_id) {
 
   if (frame->is_dirty_) {
     // disk_scheduler_.WritePage(page_id, frame->GetData());
-    DiskRequest req{
-      .is_write = true,
-      .data = frame->GetDataMut(),
-      .page_id = page_id,
-      .cb = disk_scheduler_->CreatePromise()
-    };
+    DiskRequest req{.is_write = true,
+                    .data = frame->GetDataMut(),
+                    .page_id = page_id,
+                    .cb = disk_scheduler_->CreatePromise()};
     auto fut = req.cb.get_future();
     std::vector<DiskRequest> v;
     v.push_back(std::move(req));
@@ -358,7 +351,7 @@ bool BufferPoolManager::FlushPage(PageId_t page_id) {
 void BufferPoolManager::FlushAllPagesUnsafe() {
   std::vector<PageId_t> pids;
   pids.reserve(page_table_.size());
-  for (const auto &kv : page_table_)
+  for (const auto& kv : page_table_)
     pids.push_back(kv.first);
 
   for (auto pid : pids) {

@@ -4,7 +4,7 @@
 
 FrameStatus::FrameStatus(PageId_t page_id, FrameId_t frame_id, bool ev,
                          ArcStatus status)
-  : page_id(page_id), frame_id(frame_id), evictable(ev), arc_status(status) {}
+    : page_id(page_id), frame_id(frame_id), evictable(ev), arc_status(status) {}
 
 ArcReplacer::ArcReplacer(size_t size) : replacer_size_(size) {}
 
@@ -36,7 +36,7 @@ std::optional<FrameId_t> ArcReplacer::EvictOneList_(bool is_mru) {
 
     if (is_mru) {
       mru_.erase(erase_it);
-      mru_ghost_.push_front(frame_id);  
+      mru_ghost_.push_front(frame_id);
       return frame_id;
     } else {
       mfu_.erase(erase_it);
@@ -56,7 +56,8 @@ std::optional<FrameId_t> ArcReplacer::Evict() {
   return EvictOneList_(false);
 }
 
-bool ArcReplacer::RecordAccessExists_(FrameId_t frame_id, AccessType access_type) {
+bool ArcReplacer::RecordAccessExists_(FrameId_t frame_id,
+                                      AccessType access_type) {
   if (alive_map_.count(frame_id) == 0) {
     return false;
   }
@@ -83,7 +84,8 @@ bool ArcReplacer::RecordAccessExists_(FrameId_t frame_id, AccessType access_type
   throw std::runtime_error("Didn't find frame_id entry in MRU");
 }
 
-bool ArcReplacer::RecordAccessGhostHit_(FrameId_t frame_id, PageId_t page_id, AccessType access_type) {
+bool ArcReplacer::RecordAccessGhostHit_(FrameId_t frame_id, PageId_t page_id,
+                                        AccessType access_type) {
   if (ghost_map_.count(page_id) == 0)
     return false;
 
@@ -115,7 +117,7 @@ bool ArcReplacer::RecordAccessGhostHit_(FrameId_t frame_id, PageId_t page_id, Ac
     for (auto it = mfu_ghost_.begin(); it != mfu_ghost_.end(); it++) {
       if (*it != page_id)
         continue;
-      
+
       if (mfu_ghost_.size() >= mru_ghost_.size()) {
         mru_target_size_--;
       } else {
@@ -135,7 +137,8 @@ bool ArcReplacer::RecordAccessGhostHit_(FrameId_t frame_id, PageId_t page_id, Ac
   throw std::runtime_error("ARC status inconsisent");
 }
 
-void ArcReplacer::RecordAccessNoHit_(FrameId_t frame_id, PageId_t page_id, AccessType access_type) {
+void ArcReplacer::RecordAccessNoHit_(FrameId_t frame_id, PageId_t page_id,
+                                     AccessType access_type) {
   size_t mru_size = mru_.size() + mru_ghost_.size();
   size_t all_size = mru_size + mfu_.size() + mfu_ghost_.size();
   if (mru_size == replacer_size_) {
@@ -161,7 +164,8 @@ void ArcReplacer::RecordAccessNoHit_(FrameId_t frame_id, PageId_t page_id, Acces
   }
 }
 
-void ArcReplacer::RecordAccess(FrameId_t frame_id, PageId_t page_id, AccessType access_type) {
+void ArcReplacer::RecordAccess(FrameId_t frame_id, PageId_t page_id,
+                               AccessType access_type) {
   if (RecordAccessExists_(frame_id, access_type)) {
     return;
   } else if (RecordAccessGhostHit_(frame_id, page_id, access_type)) {

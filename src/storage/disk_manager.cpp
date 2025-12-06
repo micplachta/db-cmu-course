@@ -1,28 +1,32 @@
 #include <storage/disk_manager.hpp>
 
-#include <thread>
 #include <sys/stat.h>
-#include <stdexcept>
 #include <cassert>
 #include <cstring>
+#include <stdexcept>
+#include <thread>
 
 DiskManager::DiskManager(const std::filesystem::path& p) : db_file_name_(p) {
   log_file_name_ = p.filename().stem().string() + ".log";
-  log_io_.open(log_file_name_, std::ios::binary | std::ios::in | std::ios::app | std::ios::out);
+  log_io_.open(log_file_name_,
+               std::ios::binary | std::ios::in | std::ios::app | std::ios::out);
 
   if (!log_io_.is_open()) {
     log_io_.clear();
-    log_io_.open(log_file_name_, std::ios::binary | std::ios::in | std::ios::trunc | std::ios::out);
+    log_io_.open(log_file_name_, std::ios::binary | std::ios::in |
+                                     std::ios::trunc | std::ios::out);
 
     if (!log_io_.is_open()) {
       throw std::runtime_error("Can't open db log file");
     }
   }
 
-  db_io_.open(p, std::ios::binary | std::ios::in | std::ios::app | std::ios::out);
+  db_io_.open(p,
+              std::ios::binary | std::ios::in | std::ios::app | std::ios::out);
   if (!db_io_.is_open()) {
     db_io_.clear();
-    db_io_.open(p, std::ios::binary | std::ios::in | std::ios::trunc | std::ios::out);
+    db_io_.open(
+        p, std::ios::binary | std::ios::in | std::ios::trunc | std::ios::out);
 
     if (!db_io_.is_open()) {
       throw std::runtime_error("Can't open db log file");
@@ -30,7 +34,8 @@ DiskManager::DiskManager(const std::filesystem::path& p) : db_file_name_(p) {
   }
 
   std::filesystem::resize_file(p, (page_capacity_ + 1) * DB_PAGE_SIZE);
-  if (static_cast<size_t>(GetFileSize(db_file_name_)) < page_capacity_ * DB_PAGE_SIZE) {
+  if (static_cast<size_t>(GetFileSize(db_file_name_)) <
+      page_capacity_ * DB_PAGE_SIZE) {
     throw std::runtime_error("File size lower than expected");
   }
 }
@@ -118,7 +123,8 @@ void DiskManager::WriteLog(char* data, int size) {
   flush_log_ = true;
 
   if (flush_log_f_ != nullptr) {
-    assert(flush_log_f_->wait_for(std::chrono::seconds(10)) == std::future_status::ready);
+    assert(flush_log_f_->wait_for(std::chrono::seconds(10)) ==
+           std::future_status::ready);
   }
 
   num_flushes_ += 1;
@@ -131,7 +137,7 @@ void DiskManager::WriteLog(char* data, int size) {
   flush_log_ = false;
 }
 
-void DiskManager::ReadLog(char* buffer, int size , int offset) {
+void DiskManager::ReadLog(char* buffer, int size, int offset) {
   if (offset + size > GetFileSize(log_file_name_)) {
     throw std::runtime_error("Error, tried to read log outside of file");
   }
@@ -165,7 +171,7 @@ int DiskManager::GetNumDeletes() const {
   return num_deletes_;
 }
 
-void DiskManager::SetFlushLogFuture(std::future<void> *f) {
+void DiskManager::SetFlushLogFuture(std::future<void>* f) {
   flush_log_f_ = f;
 }
 
@@ -201,7 +207,8 @@ size_t DiskManager::AllocatePage() {
 
   if (pages_.size() + 1 >= page_capacity_) {
     page_capacity_ *= 2;
-    std::filesystem::resize_file(db_file_name_, (page_capacity_ + 1) * DB_PAGE_SIZE);
+    std::filesystem::resize_file(db_file_name_,
+                                 (page_capacity_ + 1) * DB_PAGE_SIZE);
   }
 
   return pages_.size() * DB_PAGE_SIZE;

@@ -3,24 +3,14 @@
 
 #include <config.hpp>
 
-#include <optional>
 #include <list>
-#include <unordered_map>
 #include <mutex>
+#include <optional>
+#include <unordered_map>
 
-enum class AccessType {
-  Unknown = 0,
-  Lookup,
-  Scan,
-  Index
-};
+enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
-enum class ArcStatus {
-  MRU,
-  MFU,
-  MRU_GHOST,
-  MFU_GHOST
-};
+enum class ArcStatus { MRU, MFU, MRU_GHOST, MFU_GHOST };
 
 struct FrameStatus {
   FrameStatus() = default;
@@ -34,17 +24,19 @@ struct FrameStatus {
 };
 
 class ArcReplacer {
-public:
+ public:
   ArcReplacer(size_t);
   ArcReplacer(ArcReplacer&) = delete;
   ArcReplacer(ArcReplacer&&) = delete;
 
   std::optional<FrameId_t> Evict();
-  void RecordAccess(FrameId_t, PageId_t, AccessType access_type = AccessType::Unknown);
+  void RecordAccess(FrameId_t, PageId_t,
+                    AccessType access_type = AccessType::Unknown);
   void SetEvictable(FrameId_t, bool);
   void Remove(FrameId_t);
   size_t Size() const noexcept;
-private:
+
+ private:
   std::optional<FrameId_t> EvictOneList_(bool);
   bool RecordAccessExists_(FrameId_t, AccessType);
   bool RecordAccessGhostHit_(FrameId_t, PageId_t, AccessType);

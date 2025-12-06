@@ -1,8 +1,8 @@
 #ifndef _CONFIG_HPP_
 #define _CONFIG_HPP_
 
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
 const size_t DB_PAGE_SIZE = 4096;
 const size_t DEFAULT_DB_IO_SIZE = 16;

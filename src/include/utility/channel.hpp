@@ -1,13 +1,13 @@
 #ifndef _CHANNEL_HPP_
 #define _CHANNEL_HPP_
 
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 #include <queue>
 
 template <typename T>
 class Channel {
-public:
+ public:
   Channel() = default;
 
   void Put(T element) {
@@ -25,7 +25,7 @@ public:
     return e;
   }
 
-private:
+ private:
   std::mutex mutex_;
   std::condition_variable cv_;
   std::queue<T> q_;

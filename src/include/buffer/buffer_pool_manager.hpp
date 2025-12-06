@@ -1,11 +1,11 @@
 #ifndef _BUFFER_POOL_MANAGER_HPP_
 #define _BUFFER_POOL_MANAGER_HPP_
 
-#include <config.hpp>
 #include <buffer/arc_replacer.hpp>
+#include <config.hpp>
 #include <storage/disk_manager.hpp>
-#include <storage/page_guard.hpp>
 #include <storage/disk_scheduler.hpp>
+#include <storage/page_guard.hpp>
 
 class BufferPoolManager;
 class ReadPageGuard;
@@ -16,10 +16,10 @@ class FrameHeader {
   friend class ReadPageGuard;
   friend class WritePageGuard;
 
-public:
+ public:
   FrameHeader(FrameId_t);
 
-private:
+ private:
   const char* GetData() const;
   char* GetDataMut();
   void Reset();
@@ -32,24 +32,28 @@ private:
 };
 
 class BufferPoolManager {
-public:
+ public:
   BufferPoolManager(size_t, DiskManager*);
   ~BufferPoolManager();
 
   size_t Size() const;
   PageId_t NewPage();
   bool DeletePage(PageId_t);
-  std::optional<WritePageGuard> CheckedWritePage(PageId_t, AccessType access_type = AccessType::Unknown);
-  std::optional<ReadPageGuard> CheckedReadPage(PageId_t, AccessType access_type = AccessType::Unknown);
-  WritePageGuard WritePage(PageId_t, AccessType access_type = AccessType::Unknown);
-  ReadPageGuard ReadPage(PageId_t, AccessType access_type = AccessType::Unknown);
+  std::optional<WritePageGuard> CheckedWritePage(
+      PageId_t, AccessType access_type = AccessType::Unknown);
+  std::optional<ReadPageGuard> CheckedReadPage(
+      PageId_t, AccessType access_type = AccessType::Unknown);
+  WritePageGuard WritePage(PageId_t,
+                           AccessType access_type = AccessType::Unknown);
+  ReadPageGuard ReadPage(PageId_t,
+                         AccessType access_type = AccessType::Unknown);
   bool FlushPageUnsafe(PageId_t);
   bool FlushPage(PageId_t);
   void FlushAllPagesUnsafe();
   void FlushAllPages();
   std::optional<size_t> GetPinCount(PageId_t);
 
-private:
+ private:
   const size_t num_frames_;
   std::atomic<PageId_t> next_page_id_;
   std::shared_ptr<std::mutex> mutex_;
