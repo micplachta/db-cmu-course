@@ -1,4 +1,8 @@
 build/
+bin/
+
+*.db
+*.log
 
 # Prerequisites
 *.d
