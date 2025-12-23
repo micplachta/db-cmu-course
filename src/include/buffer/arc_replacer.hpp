@@ -10,7 +10,7 @@
 
 enum class AccessType { Unknown = 0, Lookup, Scan, Index };
 
-enum class ArcStatus { MRU, MFU, MRU_GHOST, MFU_GHOST };
+enum class ArcStatus { MRU = 0, MFU, MRU_GHOST, MFU_GHOST };
 
 struct FrameStatus {
   FrameStatus() = default;
@@ -47,6 +47,11 @@ class ArcReplacer {
   std::list<PageId_t> mru_ghost_;
   std::list<PageId_t> mfu_ghost_;
 
+  std::unordered_map<FrameId_t, std::list<FrameId_t>::iterator> mru_map_;
+  std::unordered_map<FrameId_t, std::list<FrameId_t>::iterator> mfu_map_;
+  std::unordered_map<PageId_t, std::list<PageId_t>::iterator> mru_ghost_map_;
+  std::unordered_map<PageId_t, std::list<PageId_t>::iterator> mfu_ghost_map_;
+
   std::unordered_map<FrameId_t, FrameStatus> alive_map_;
   std::unordered_map<PageId_t, FrameStatus> ghost_map_;
 
@@ -54,7 +59,7 @@ class ArcReplacer {
   size_t mru_target_size_ = 0;
   size_t replacer_size_;
 
-  std::mutex mutex_;
+  mutable std::mutex mutex_;
 };
 
 #endif

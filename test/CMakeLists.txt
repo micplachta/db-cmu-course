@@ -1,6 +1,6 @@
-add_executable(db_tests
-    test.cpp
-)
+add_executable(db_tests)
+
+add_subdirectory(buffer)
 
 target_link_libraries(db_tests PRIVATE
     db_core

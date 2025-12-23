@@ -6,6 +6,8 @@
 #include <stdexcept>
 #include <thread>
 
+#include <iostream>
+
 DiskManager::DiskManager(const std::filesystem::path& p) : db_file_name_(p) {
   log_file_name_ = p.filename().stem().string() + ".log";
   log_io_.open(log_file_name_,
@@ -22,7 +24,7 @@ DiskManager::DiskManager(const std::filesystem::path& p) : db_file_name_(p) {
   }
 
   db_io_.open(p,
-              std::ios::binary | std::ios::in | std::ios::app | std::ios::out);
+              std::ios::binary | std::ios::in | std::ios::out);
   if (!db_io_.is_open()) {
     db_io_.clear();
     db_io_.open(
@@ -33,10 +35,14 @@ DiskManager::DiskManager(const std::filesystem::path& p) : db_file_name_(p) {
     }
   }
 
-  std::filesystem::resize_file(p, (page_capacity_ + 1) * DB_PAGE_SIZE);
+  std::filesystem::resize_file(p, page_capacity_ * DB_PAGE_SIZE);
   if (static_cast<size_t>(GetFileSize(db_file_name_)) <
       page_capacity_ * DB_PAGE_SIZE) {
     throw std::runtime_error("File size lower than expected");
+  }
+
+  for (size_t i = 0; i < page_capacity_; i++) {
+    free_slots_.push_back(i*DB_PAGE_SIZE);
   }
 }
 
@@ -200,8 +206,8 @@ int DiskManager::GetFileSize(const std::string& name) {
 
 size_t DiskManager::AllocatePage() {
   if (!free_slots_.empty()) {
-    auto offset = free_slots_.back();
-    free_slots_.pop_back();
+    auto offset = free_slots_.front();
+    free_slots_.pop_front();
     return offset;
   }
 

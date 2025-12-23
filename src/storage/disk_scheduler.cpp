@@ -1,5 +1,7 @@
 #include <storage/disk_scheduler.hpp>
 
+#include <iostream>
+
 DiskScheduler::DiskScheduler(DiskManager* m) : disk_manager_(m) {
   worker_thread_.emplace([&] { StartWorkerThread(); });
 }
@@ -17,6 +19,11 @@ void DiskScheduler::Schedule(std::vector<DiskRequest>& requests) {
     request_q_.Put(std::move(r));
   }
 }
+
+  bool is_write;
+  char* data;
+  PageId_t page_id;
+  DiskSchedulerPromise cb;
 
 void DiskScheduler::StartWorkerThread() {
   while (true) {

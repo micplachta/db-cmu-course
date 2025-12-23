@@ -13,6 +13,8 @@ ReadPageGuard::ReadPageGuard(ReadPageGuard&& other) noexcept
 }
 
 ReadPageGuard& ReadPageGuard::operator=(ReadPageGuard&& other) noexcept {
+  if (is_valid_)
+    Drop();
   page_id_ = other.page_id_;
   frame_ = std::move(other.frame_);
   replacer_ = std::move(other.replacer_);
@@ -51,9 +53,7 @@ void ReadPageGuard::Flush() {
     throw std::runtime_error("Error, tried to flush using invalid read guard");
   }
 
-  std::unique_lock<std::mutex> l(*bpm_mutex_);
   if (frame_->is_dirty_) {
-    // disk_scheduler_->WritePage(page_id_, frame_->GetData());
     DiskRequest req{.is_write = true,
                     .data = frame_->GetDataMut(),
                     .page_id = page_id_,
@@ -70,6 +70,8 @@ void ReadPageGuard::Flush() {
 void ReadPageGuard::Drop() {
   if (!is_valid_)
     return;
+
+  read_lock_.unlock();
 
   std::unique_lock<std::mutex> l(*bpm_mutex_);
   size_t old_pin = frame_->pin_count_.fetch_sub(1);
@@ -108,6 +110,8 @@ WritePageGuard::WritePageGuard(WritePageGuard&& other) noexcept
 }
 
 WritePageGuard& WritePageGuard::operator=(WritePageGuard&& other) noexcept {
+  if (is_valid_)
+    Drop();
   page_id_ = other.page_id_;
   frame_ = std::move(other.frame_);
   replacer_ = std::move(other.replacer_);
@@ -154,10 +158,7 @@ void WritePageGuard::Flush() {
     throw std::runtime_error("Error, tried to flush using invalid write guard");
   }
 
-  std::unique_lock<std::mutex> l(*bpm_mutex_);
   if (frame_->is_dirty_) {
-    // disk_scheduler_->WritePage(page_id_, frame_->GetData());
-
     DiskRequest req{.is_write = true,
                     .data = frame_->GetDataMut(),
                     .page_id = page_id_,
@@ -174,6 +175,8 @@ void WritePageGuard::Flush() {
 void WritePageGuard::Drop() {
   if (!is_valid_)
     return;
+
+  rw_lock_.unlock();
 
   std::unique_lock<std::mutex> lk(*bpm_mutex_);
 

@@ -7,7 +7,7 @@
 #include <future>
 #include <mutex>
 #include <unordered_map>
-#include <vector>
+#include <list>
 
 class DiskManager {
  public:
@@ -51,7 +51,7 @@ class DiskManager {
   std::filesystem::path db_file_name_;
 
   std::unordered_map<PageId_t, size_t> pages_;
-  std::vector<size_t> free_slots_;
+  std::list<size_t> free_slots_;
 
   bool flush_log_{false};
   std::future<void>* flush_log_f_{nullptr};
